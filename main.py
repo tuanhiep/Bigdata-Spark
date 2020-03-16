@@ -47,8 +47,7 @@ model_lr = pipeline_lr.fit(train)
 trainingSummary = model_lr.stages[1].summary
 training_accuracy = trainingSummary.accuracy
 print("Logistic Regression gives the accuracy of training set: %f" % training_accuracy)
-
-# # Predict
+# Predict
 predictions = model_lr.transform(test)
 # Select example rows to display.
 predictions.select("prediction", raw_data.columns[-1], "features").show(5)
@@ -57,6 +56,8 @@ evaluator = MulticlassClassificationEvaluator(
     labelCol=raw_data.columns[-1], predictionCol="prediction", metricName="accuracy")
 testing_accuracy = evaluator.evaluate(predictions)
 print("Logistic Regression gives the accuracy of testing set %f " % testing_accuracy)
+predictions.select("prediction", raw_data.columns[-1]).repartition(1).write.format("com.databricks.spark.csv").save(
+    "csv/predictions_logistic_regression.csv")
 
 # - Decision Tree Classifier
 
@@ -72,8 +73,10 @@ evaluator = MulticlassClassificationEvaluator(
     labelCol=raw_data.columns[-1], predictionCol="prediction", metricName="accuracy")
 testing_accuracy = evaluator.evaluate(predictions)
 print("Decision Tree gives the accuracy of testing set %f" % testing_accuracy)
+predictions.select("prediction", raw_data.columns[-1]).repartition(1).write.format("com.databricks.spark.csv").save(
+    "csv/predictions_decision_tree.csv")
 
-# - Random Forest Classifier
+# # - Random Forest Classifier
 
 rf = RandomForestClassifier(labelCol=raw_data.columns[-1], numTrees=10)
 pipeline_rf = Pipeline(stages=[assembler, rf])
@@ -87,3 +90,5 @@ evaluator = MulticlassClassificationEvaluator(
     labelCol=raw_data.columns[-1], predictionCol="prediction", metricName="accuracy")
 testing_accuracy = evaluator.evaluate(predictions)
 print("Random Forest gives the accuracy of testing set %f" % testing_accuracy)
+predictions.select("prediction", raw_data.columns[-1]).repartition(1).write.format("com.databricks.spark.csv").save(
+    "csv/predictions_random_forest.csv")
