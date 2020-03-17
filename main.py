@@ -35,7 +35,7 @@ test.repartition(1).write.format("com.databricks.spark.csv").save("csv/testing.c
 # - Multi-nominal Logistic Regression
 
 
-assembler = VectorAssembler(inputCols=train.columns, outputCol='features')
+assembler = VectorAssembler(inputCols=train.columns[:-1], outputCol='features')
 assembler.transform(train)
 
 lr = LogisticRegression(maxIter=10,
