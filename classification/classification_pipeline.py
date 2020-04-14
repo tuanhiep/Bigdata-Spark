@@ -13,9 +13,9 @@ from pyspark.ml import Pipeline
 # Prepare training and test data.
 
 # Check if folder csv exists, then delete it
-csv_path = Path('csv')
-if csv_path.exists() and csv_path.is_dir():
-    shutil.rmtree(csv_path)
+# csv_path = Path('csv')
+# if csv_path.exists() and csv_path.is_dir():
+#     shutil.rmtree(csv_path)
 
 # Define spark session
 spark = SparkSession \
