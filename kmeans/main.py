@@ -54,11 +54,15 @@ df=spark.createDataFrame(predictions).toPandas()
 
 # Scatter plot
 plt.clf()
+legends=[]
 for label in range(15):
     d = df[df['cluster_id'] == label]
     plt.scatter(d['x1'], d['x2'])
+    legends.append(label)
+plt.legend(legends, loc='upper left')
 plt.title('K-means')
 plt.show()
 
+df.to_csv("../resource/cluster.csv")
 
 
