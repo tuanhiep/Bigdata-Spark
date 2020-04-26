@@ -1,4 +1,4 @@
-#  Copyright (c) 2020. Tuan-Hiep TRAN
+#  Copyright (c) 2020. Tuan Hiep TRAN
 from pathlib import Path
 import shutil
 from pyspark.ml.classification import LogisticRegression, DecisionTreeClassifier, RandomForestClassifier
@@ -26,8 +26,8 @@ spark = SparkSession \
 raw_data = spark.read.format("csv").option("inferSchema", "true").load("resource/covtype.data")
 train, test = raw_data.randomSplit([0.8, 0.2], seed=12345)
 # Create training set and testing set
-train.repartition(1).write.format("com.databricks.spark.csv").save("csv/training.csv")
-test.repartition(1).write.format("com.databricks.spark.csv").save("csv/testing.csv")
+train.repartition(1).write.format("com.databricks.spark.csv").save("resource/csv/training.csv")
+test.repartition(1).write.format("com.databricks.spark.csv").save("resource/csv/testing.csv")
 
 # Question 2. (Predicting Forest Cover)
 # Train the following classifiers on training.csv using Spark MLlib:
@@ -57,7 +57,7 @@ evaluator = MulticlassClassificationEvaluator(
 testing_accuracy = evaluator.evaluate(predictions)
 print("Logistic Regression gives the accuracy of testing set %f " % testing_accuracy)
 predictions.select("prediction", raw_data.columns[-1]).repartition(1).write.format("com.databricks.spark.csv").save(
-    "csv/predictions_logistic_regression.csv")
+    "resource/csv/predictions_logistic_regression.csv")
 
 # - Decision Tree Classifier
 
@@ -74,7 +74,7 @@ evaluator = MulticlassClassificationEvaluator(
 testing_accuracy = evaluator.evaluate(predictions)
 print("Decision Tree gives the accuracy of testing set %f" % testing_accuracy)
 predictions.select("prediction", raw_data.columns[-1]).repartition(1).write.format("com.databricks.spark.csv").save(
-    "csv/predictions_decision_tree.csv")
+    "resource/csv/predictions_decision_tree.csv")
 
 # # - Random Forest Classifier
 
@@ -91,4 +91,4 @@ evaluator = MulticlassClassificationEvaluator(
 testing_accuracy = evaluator.evaluate(predictions)
 print("Random Forest gives the accuracy of testing set %f" % testing_accuracy)
 predictions.select("prediction", raw_data.columns[-1]).repartition(1).write.format("com.databricks.spark.csv").save(
-    "csv/predictions_random_forest.csv")
+    "resource/csv/predictions_random_forest.csv")
