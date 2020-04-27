@@ -9,6 +9,7 @@ from pyspark.mllib.recommendation import Rating
 from pyspark.sql import SparkSession
 import pandas as pd
 from pyspark import Row
+from scipy.spatial import distance
 
 
 # Question 1 (k-means):
@@ -83,7 +84,7 @@ for label in range(5):
     legends.append(label)
 plt.legend(legends, loc='upper left')
 plt.title('K-means')
-plt.show()
+# plt.show()
 
 # Question 3 (Interpreting the movie clusters):
 # We want to examine the clustering of movies we have found to see whether there is some meaningful
@@ -92,3 +93,49 @@ plt.show()
 # belonging to that cluster by their Euclidean distances to the cluster center.
 # For each cluster, extract the top 20 movies and print out their titles, genre labels, and ranking scores. Based
 # on the genre labels, what do think about the quality of the clusters?
+
+
+# rdd contains movie ids and its euclidean distance to its cluster center
+# rdd: cluster_id|movie_id|euclidean distance
+ranking = model.productFeatures(). \
+    map(lambda tuple: (
+    tuple[0], tuple[1], clusters.clusterCenters[clusters.predict(tuple[1])], clusters.predict(tuple[1]))). \
+    map(lambda r: (r[3], r[0], distance.euclidean(r[1], r[2])))
+
+# print(ranking.take(2))
+# list of clusters cluster id --> 20 elements in form of cluster_id|movie_id|euclidean distance
+top_movies = []
+for id in range(5):
+    # sort movies of each cluster by its euclidean to its center
+    sorted_ranking = ranking.filter(lambda row: row[0] == id).sortBy(lambda a: a[2])
+    # store top 20 movies for each cluster
+    top_movies.append(sc.parallelize(sorted_ranking.take(20)))
+    # print("ID= %s" % id)
+    # print(sorted_ranking.take(2))
+
+# Load data for movie genres
+movies = sc.textFile("../resource/ml-100k/u.item")
+genre_index = sc.textFile("../resource/ml-100k/u.genre").map(lambda s: s.split("|")).map(lambda row: row[0]).collect()
+
+
+# function to convert encoded genre into eligible genre
+def to_eligible_genre(encoded_genre_array):
+    genre = ""
+    for i in range(19):
+        if encoded_genre_array[i] == "1":
+            genre += genre_index[i] + "|"
+    return genre
+
+
+#  map of movies:  movie id --> (title,genre)
+movies_map = movies.map(lambda line: line.split("|")).map(lambda array: (int(array[0]), array[1], array[-19:])). \
+    map(lambda row: (row[0], (row[1] + "|" + to_eligible_genre(row[2])))).collectAsMap()
+# print(movies_map[1])
+# We have above top_movies: list:  cluster id --> 20 elements in form of cluster_id|movie_id|euclidean distance
+recommended_movie = []
+for cluster_id in range(5):
+    rdd = top_movies[cluster_id].map(lambda r: (r[0], r[1], movies_map[r[1]], r[2]))
+    df = spark.createDataFrame(rdd).toPandas()
+    # save the top 20 movies of each cluster based on ranking score (Euclidean distance) into .csv file
+    df.columns = ["cluster_id", "movie_id", "info", "ranking_score"]
+    df.to_csv("../resource/top20_movies_cluster_{0}.csv".format(cluster_id))
